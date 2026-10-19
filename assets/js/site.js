@@ -12,6 +12,25 @@
   }
   window.__lenis = lenis;
 
+  /* intro: logo on white, load line follows the hero photo, then the panel lifts and the hero settles.
+     Leaves after the hero is decoded and fonts are ready, never sooner than ~1s, never later than ~2.2s. */
+  if (root.classList.contains('is-intro')) {
+    const line = document.querySelector('.intro__line span');
+    const hero = document.querySelector('.plate--first img');
+    const t0 = performance.now();
+    lenis?.stop();
+    requestAnimationFrame(() => { if (line) line.style.transform = 'scaleX(.35)'; });
+    const ready = hero && hero.decode ? hero.decode().catch(() => {}) : Promise.resolve();
+    const fonts = document.fonts ? document.fonts.ready : Promise.resolve();
+    Promise.race([Promise.all([ready, fonts]), new Promise(r => setTimeout(r, 2200))]).then(() => {
+      if (line) line.style.transform = 'scaleX(1)';
+      setTimeout(() => {
+        root.classList.add('is-leaving');
+        setTimeout(() => { root.classList.remove('is-intro', 'is-leaving'); lenis?.start(); }, 1700);
+      }, Math.max(0, 1000 - (performance.now() - t0)) + 400);
+    });
+  }
+
   /* images that finished before this script ran still need their class */
   document.querySelectorAll('img.fade').forEach(img => { if (img.complete && img.naturalWidth) img.classList.add('is-loaded'); });
 
